@@ -7,7 +7,7 @@ import(
 )
 
 func InvoiceRoutes(incomingRoutes *gin.Engine){
-	routesForInvoices := incomingRoutes.Group("/invoices")
+	routesForInvoices := incomingRoutes.Group("api/invoices")
 
 	routesForInvoices.GET("/", controllers.GetInvoices())
 	routesForInvoices.GET("/:invoice_id", controllers.GetInvoiceById())

@@ -7,7 +7,7 @@ import(
 )
 
 func OrderRoutes(incomingRoutes *gin.Engine){
-	routesForOrders := incomingRoutes.Group("/orders")
+	routesForOrders := incomingRoutes.Group("api/orders")
 
 	routesForOrders.GET("/", controllers.GetOrders())
 	routesForOrders.GET("/:order_id", controllers.GetOrderById())

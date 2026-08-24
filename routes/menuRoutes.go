@@ -7,12 +7,12 @@ import(
 )
 
 func MenuRoutes(incomingRoutes *gin.Engine){
-	routesForMenu := incomingRoutes.Group("/menu")
+	routesForMenu := incomingRoutes.Group("api/menu")
 
 	routesForMenu.GET("/", controllers.GetMenus())
 	routesForMenu.GET("/:menu_id", controllers.GetMenuById())
 
-	routesForMenu.POST("/create-menu", controllers.CreateMenu())
+	routesForMenu.POST("/create_menu", controllers.CreateMenu())
 	routesForMenu.PATCH("/:menu_id", controllers.UpdateMenu())
 
 	routesForMenu.DELETE("/:menu_id", controllers.DeleteMenu())

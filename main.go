@@ -1,21 +1,21 @@
-package main 
+package main
 
-import(
+import (
 	"fmt"
 	"os"
-	"github.com/joho/godotenv"
-	"github.com/gin-gonic/gin"
+
+	"github.com/Lordlance-lanre/Golang-Restaurant-Backend/database"
 	"github.com/Lordlance-lanre/Golang-Restaurant-Backend/middleware"
 	"github.com/Lordlance-lanre/Golang-Restaurant-Backend/routes"
-	"github.com/Lordlance-lanre/Golang-Restaurant-Backend/database"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-var foodCollection *mongo.Collection = database.OpenCollection(database.Client,"food")
+var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
 
+func main() {
 
-func main(){
-	
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Printf("Error loading .env file: %v", err)
@@ -25,7 +25,7 @@ func main(){
 
 	router := gin.New()
 	router.Use(gin.Logger())
-	
+
 	routes.UserRoutes(router)
 
 	router.Use(middleware.Authentication())

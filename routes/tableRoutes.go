@@ -6,7 +6,7 @@ import(
 )
 
 func TableRoutes(incomingRoutes *gin.Engine){
-	routesForTable := incomingRoutes.Group("/table")
+	routesForTable := incomingRoutes.Group("api/table")
 
 	routesForTable.GET("/", controllers.GetTables())
 	routesForTable.GET("/:table_id", controllers.GetTableById())

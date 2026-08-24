@@ -1,38 +1,40 @@
 package controller
 
-import(
+import (
 	"context"
-	"fmt"
+	// "fmt"
 	"net/http"
 	"time"
 
 	"github.com/Lordlance-lanre/Golang-Restaurant-Backend/database"
 	"github.com/Lordlance-lanre/Golang-Restaurant-Backend/models"
 	"github.com/gin-gonic/gin"
+
 	// "github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var menuCollection *mongo.Collection = database.OpenCollection(database.Client, "menu")
 
 func inTimeSpan(start, end, check time.Time) bool {
-	return check.After(start) && check.Before(end)
+	// return check.After(start) && check.Before(end)
+	return start.After(time.Now()) && end.After(start)
 }
 
-func GetMenus() gin.HandlerFunc{
-	return func(c *gin.Context){
+func GetMenus() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// c.Writer.Write([]byte("Get Menus"))
-		var ctx, cancel = context.WithTimeout(context.Background(), 100 * time.Second)
-		result , err := menuCollection.Find(context.TODO(), bson.M{})
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		result, err := menuCollection.Find(context.TODO(), bson.M{})
 		defer cancel()
-		if err != nil{
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"": err.Error()})
 		}
 		var allMenus []bson.M
-		if err := result.All(ctx, &allMenus); err != nil{
+		if err := result.All(ctx, &allMenus); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "An error occured: " + err.Error()})
 		}
 		c.JSON(http.StatusOK, allMenus)
@@ -40,8 +42,8 @@ func GetMenus() gin.HandlerFunc{
 	}
 }
 
-func GetMenuById() gin.HandlerFunc{
-	return func(c *gin.Context){
+func GetMenuById() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// c.Writer.Write([]byte("Get Menu By Id"))
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -51,54 +53,54 @@ func GetMenuById() gin.HandlerFunc{
 
 		err := foodCollection.FindOne(ctx, bson.M{"menu_id": menuId}).Decode(&menu)
 		defer cancel()
-		if err != nil{
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured while fetching menu: " + err.Error()})
 		}
 		c.JSON(http.StatusOK, menu)
 	}
 }
 
-func CreateMenu() gin.HandlerFunc{
-	return func(c *gin.Context){
+func CreateMenu() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// c.Writer.Write([]byte("Create Menu"))
 
-	var ctx,cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	var menu models.Menu
-	// var food models.Food
+		 ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		 defer cancel()
+		 
+		var menu models.Menu
+		// var food models.Food
 
-	if err := c.BindJSON(&menu); err != nil{
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON: " + err.Error()})
-		return
+		if err := c.BindJSON(&menu); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON: " + err.Error()})
+			return
+		}
+
+		validationError := validate.Struct(menu)
+		if validationError != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationError.Error()})
+			return
+		}
+
+		menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+		menu.ID = primitive.NewObjectID()
+		menuID := menu.ID.Hex()
+		menu.Menu_id = &menuID
+
+		_, err := menuCollection.InsertOne(ctx, menu)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "An error occured while creating menu: " + err.Error()})
+			return
+		}
+		defer cancel()
+		c.JSON(http.StatusOK, menu)
+
 	}
-
-	validationError := validate.Struct(menu)
-	if validationError != nil{
-		c.JSON(http.StatusBadRequest, gin.H{"error": validationError.Error()})
-		return
-	}
-
-	menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-
-	menu.ID = primitive.NewObjectID()
-	menuID := menu.ID.Hex()
-	menu.Menu_id = &menuID
-
-
-	result, err :=menuCollection.InsertOne(ctx,menu)
-	if err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "An error occured while creating menu: " + err.Error()})
-		return
-	}
-	defer cancel()
-	c.JSON(http.StatusOK, result)
-
 }
-}
 
-
-func UpdateMenu() gin.HandlerFunc{
-	return func(c *gin.Context){
+func UpdateMenu() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// c.Writer.Write([]byte("Update Menu"))
 
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -106,19 +108,19 @@ func UpdateMenu() gin.HandlerFunc{
 
 		var menu models.Menu
 
-		if err := c.BindJSON(&menu); err != nil{
+		if err := c.BindJSON(&menu); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON: " + err.Error()})
 			return
 		}
 		menuId := c.Param("menu_id")
 
 		filter := bson.M{"menu_id": menuId}
-		
+
 		var updateObj bson.D
 
-		if !menu.Start_Date.IsZero() && !menu.End_Date.IsZero(){
-			if !inTimeSpan(menu.Start_Date, menu.End_Date, time.Now()){
-				msg := fmt.Sprintf("Please update the end date for menu")
+		if !menu.Start_Date.IsZero() && !menu.End_Date.IsZero() {
+			if !inTimeSpan(menu.Start_Date, menu.End_Date, time.Now()) {
+				msg := "Please update the end date for menu"
 				c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 				return
 			}
@@ -126,10 +128,10 @@ func UpdateMenu() gin.HandlerFunc{
 			updateObj = append(updateObj, bson.E{Key: "end_date", Value: menu.End_Date})
 		}
 
-		if menu.Name != nil{
+		if menu.Name != nil {
 			updateObj = append(updateObj, bson.E{Key: "name", Value: menu.Name})
 		}
-		if menu.Category != nil{
+		if menu.Category != nil {
 			updateObj = append(updateObj, bson.E{Key: "category", Value: menu.Category})
 		}
 		menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -140,7 +142,7 @@ func UpdateMenu() gin.HandlerFunc{
 
 		result, err := menuCollection.UpdateOne(ctx, filter, bson.D{bson.E{Key: "$set", Value: updateObj}}, opts)
 
-		if err != nil{
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Menu update failed: " + err.Error()})
 			return
 		}
@@ -150,8 +152,25 @@ func UpdateMenu() gin.HandlerFunc{
 	}
 }
 
-func DeleteMenu() gin.HandlerFunc{
-	return func(c *gin.Context){
-		c.Writer.Write([]byte("Delete Menu"))
+func DeleteMenu() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		menuId := c.Param("menu_id")
+		filter := bson.M{"menu_id": menuId}
+
+		result, err := menuCollection.DeleteOne(ctx, filter)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occurred while deleting menu: " + err.Error()})
+			return
+		}
+
+		if result.DeletedCount == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Menu not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
 	}
 }
