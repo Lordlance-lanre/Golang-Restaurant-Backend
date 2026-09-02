@@ -44,17 +44,17 @@ func GetMenus() gin.HandlerFunc {
 
 func GetMenuById() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// c.Writer.Write([]byte("Get Menu By Id"))
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
 
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		menuId := c.Param("menu_id")
 
 		var menu models.Menu
 
-		err := foodCollection.FindOne(ctx, bson.M{"menu_id": menuId}).Decode(&menu)
-		defer cancel()
+		err := menuCollection.FindOne(ctx, bson.M{"menu_id": menuId}).Decode(&menu)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured while fetching menu: " + err.Error()})
+			return
 		}
 		c.JSON(http.StatusOK, menu)
 	}
@@ -64,9 +64,9 @@ func CreateMenu() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// c.Writer.Write([]byte("Create Menu"))
 
-		 ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		 defer cancel()
-		 
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
 		var menu models.Menu
 		// var food models.Food
 
@@ -140,14 +140,14 @@ func UpdateMenu() gin.HandlerFunc {
 		upsert := true
 		opts := options.UpdateOne().SetUpsert(upsert)
 
-		result, err := menuCollection.UpdateOne(ctx, filter, bson.D{bson.E{Key: "$set", Value: updateObj}}, opts)
+		_, err := menuCollection.UpdateOne(ctx, filter, bson.D{bson.E{Key: "$set", Value: updateObj}}, opts)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Menu update failed: " + err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, updateObj)
 
 	}
 }

@@ -12,14 +12,14 @@ func Authentication() gin.HandlerFunc {
 		// c.Next()
 		clientToken := c.Request.Header.Get("token")
 		if clientToken == ""{
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "No authorization header provided"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No authorization header provided"})
 			c.Abort()
 			return
 		}
 
 		claims, msg := helpers.ValidateAllTokens(clientToken)
 		if msg != "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": msg})
 			c.Abort()
 			return
 		}

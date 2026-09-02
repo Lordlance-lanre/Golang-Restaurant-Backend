@@ -149,7 +149,7 @@ func CreateFood() gin.HandlerFunc {
 		_, err = foodCollection.InsertOne(ctx, food)
 		if err != nil {
 			msg := "food item was not created"
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 			return
 		}
 
@@ -198,7 +198,7 @@ func UpdateFood() gin.HandlerFunc {
 			err := menuCollection.FindOne(ctx, bson.M{"menu_id": food.Menu_id}).Decode(&menu)
 			if err != nil {
 				msg := "Invalid Menu ID"
-				c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 				return
 			}
 			updateObj = append(updateObj, bson.E{Key: "menu_id", Value: food.Menu_id})
@@ -209,7 +209,7 @@ func UpdateFood() gin.HandlerFunc {
 		upsert := true
 		filter := bson.M{"food_id": foodId}
 		opts := options.UpdateOne().SetUpsert(upsert)
-		result, err := foodCollection.UpdateOne(
+		_, err := foodCollection.UpdateOne(
 			ctx,
 			filter,
 			bson.D{
@@ -222,7 +222,7 @@ func UpdateFood() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, updateObj)
 	}
 }
 

@@ -80,14 +80,14 @@ func CreateTable() gin.HandlerFunc{
 		table.ID = primitive.NewObjectID()
 		table.Table_id = table.ID.Hex()
 		
-		result, err := tableCollection.InsertOne(ctx, table)
+		_, err := tableCollection.InsertOne(ctx, table)
 		if err != nil {
 			msg := "Order Item was not created"
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
 		
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, table)
 		
 	}
 }

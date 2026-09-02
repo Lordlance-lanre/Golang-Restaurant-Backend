@@ -88,14 +88,14 @@ func CreateOrder() gin.HandlerFunc {
 		orderID := order.ID.Hex()
 		order.Order_id = &orderID
 
-		result, err := orderCollection.InsertOne(ctx, order)
+		_, err := orderCollection.InsertOne(ctx, order)
 		if err != nil {
 			msg := "Order item was not created"
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, order)
 	}
 }
 
@@ -133,7 +133,7 @@ func UpdateOrder() gin.HandlerFunc {
 		filter := bson.M{"order_id": orderId}
 		opts := options.UpdateOne().SetUpsert(upsert)
 
-		result, err := orderCollection.UpdateOne(
+		_, err := orderCollection.UpdateOne(
 			ctx,
 			filter,
 			bson.D{
@@ -147,7 +147,7 @@ func UpdateOrder() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, updateObj)
 	}
 }
 
